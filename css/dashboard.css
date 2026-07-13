@@ -189,3 +189,15 @@ body {
     cursor: pointer;
     align-self: flex-end;
 }
+
+.sidebar .logo-imagen {
+    text-align: center;
+    margin: 10px 0 20px 0;
+}
+
+.sidebar .logo-imagen img {
+    width: 160px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}

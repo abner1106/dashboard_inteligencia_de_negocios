@@ -81,7 +81,10 @@ $mesesDemanda = obtenerDatos($pdo, "
     <div class="dashboard-container">
         <!-- Barra lateral -->
         <aside class="sidebar">
-            <div class="logo">🏁 LlanteraPro</div>
+            <div class="logo">🏁 Llantera Hriam</div>
+            <div class="logo-imagen">
+                <img src="ferrari.png" alt="Logo de la empresa">
+            </div>
             <nav>
                 <a href="#" class="active">📊 Dashboard</a>
                 <a href="#">📦 Inventario</a>
