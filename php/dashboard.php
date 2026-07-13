@@ -73,7 +73,7 @@ $mesesDemanda = obtenerDatos($pdo, "
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Llantera</title>
-    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="./css/dashboard.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 
@@ -157,7 +157,7 @@ $mesesDemanda = obtenerDatos($pdo, "
     <script id="data-mesesVentas" type="application/json"><?= json_encode($mesesVentas) ?></script>
     <script id="data-mesesDemanda" type="application/json"><?= json_encode($mesesDemanda) ?></script>
 
-    <script src="dashboard.js"></script>
+    <script src="./js/dashboard.js"></script>
 </body>
 
 </html>
