@@ -165,7 +165,7 @@ document.getElementById('btn-consultar').addEventListener('click', () => {
     if (ini) params.append('fecha_ini', ini);
     if (fin) params.append('fecha_fin', fin);
 
-    fetch(`ajax_consulta.php?${params.toString()}`)
+    fetch(`endpoints/ajax_consulta.php?${params.toString()}`)
         .then(res => res.json())
         .then(data => {
             const ctx = document.getElementById('chartPersonalizado').getContext('2d');
