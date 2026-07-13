@@ -152,3 +152,41 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+let chartPersonalizado;
+
+document.getElementById('btn-consultar').addEventListener('click', () => {
+    const dimension = document.getElementById('dimension').value;
+    const metrica = document.getElementById('metrica').value;
+    const ini = document.getElementById('fecha-ini').value;
+    const fin = document.getElementById('fecha-fin').value;
+
+    const params = new URLSearchParams({ dimension, metrica });
+    if (ini) params.append('fecha_ini', ini);
+    if (fin) params.append('fecha_fin', fin);
+
+    fetch(`ajax_consulta.php?${params.toString()}`)
+        .then(res => res.json())
+        .then(data => {
+            const ctx = document.getElementById('chartPersonalizado').getContext('2d');
+            if (chartPersonalizado) chartPersonalizado.destroy();
+
+            chartPersonalizado = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.etiqueta),
+                    datasets: [{
+                        label: metrica === 'cantidad' ? 'Unidades' : 'Monto ($)',
+                        data: data.map(d => parseFloat(d.valor)),
+                        backgroundColor: '#16a085',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        })
+        .catch(err => console.error(err));
+});

@@ -73,7 +73,7 @@ $mesesDemanda = obtenerDatos($pdo, "
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Llantera</title>
-    <link rel="stylesheet" href="./css/dashboard.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 
@@ -145,11 +145,37 @@ $mesesDemanda = obtenerDatos($pdo, "
                         <canvas id="chartMesesDemanda"></canvas>
                     </div>
                 </div>
+                <div class="card full-width">
+                    <h3>🧩 Consulta Personalizada</h3>
+                    <div class="filters">
+                        <label>Dimensión:
+                            <select id="dimension">
+                                <option value="producto">Producto</option>
+                                <option value="empleado">Empleado</option>
+                                <option value="sucursal">Sucursal</option>
+                                <option value="categoria">Categoría</option>
+                                <option value="mes">Mes</option>
+                            </select>
+                        </label>
+                        <label>Métrica:
+                            <select id="metrica">
+                                <option value="cantidad">Cantidad vendida</option>
+                                <option value="monto">Monto total ($)</option>
+                                <option value="ingreso">Ingreso neto</option>
+                            </select>
+                        </label>
+                        <label>Desde: <input type="date" id="fecha-ini"></label>
+                        <label>Hasta: <input type="date" id="fecha-fin"></label>
+                        <button id="btn-consultar">🔍 Consultar</button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chartPersonalizado"></canvas>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
-    <!-- Datos JSON para JavaScript -->
     <script id="data-productos" type="application/json"><?= json_encode($productos) ?></script>
     <script id="data-empleados" type="application/json"><?= json_encode($empleados) ?></script>
     <script id="data-sucursales" type="application/json"><?= json_encode($sucursales) ?></script>
@@ -157,7 +183,7 @@ $mesesDemanda = obtenerDatos($pdo, "
     <script id="data-mesesVentas" type="application/json"><?= json_encode($mesesVentas) ?></script>
     <script id="data-mesesDemanda" type="application/json"><?= json_encode($mesesDemanda) ?></script>
 
-    <script src="./js/dashboard.js"></script>
+    <script src="../js/dashboard.js"></script>
 </body>
 
 </html>
