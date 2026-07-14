@@ -1,4 +1,4 @@
-/* dashboard.css */
+/* dashboard.css - Versión unificada con paneles a ancho completo */
 :root {
     --primary: #2c3e50;
     --secondary: #34495e;
@@ -11,6 +11,8 @@
     --text-light: #7f8c8d;
     --border: #dcdde1;
     --shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    --chart-height: 400px;
+    /* altura mínima para gráficos grandes */
 }
 
 * {
@@ -30,7 +32,7 @@ body {
     min-height: 100vh;
 }
 
-/* Sidebar */
+/* ---- Sidebar ---- */
 .sidebar {
     width: 240px;
     background-color: var(--primary);
@@ -46,6 +48,18 @@ body {
     font-weight: bold;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     margin-bottom: 20px;
+}
+
+.sidebar .logo-imagen {
+    text-align: center;
+    margin: 10px 0 20px 0;
+}
+
+.sidebar .logo-imagen img {
+    width: 160px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
 }
 
 .sidebar nav a {
@@ -64,7 +78,7 @@ body {
     border-left: 4px solid var(--accent);
 }
 
-/* Main content */
+/* ---- Contenido principal ---- */
 .main-content {
     flex: 1;
     padding: 25px;
@@ -88,15 +102,17 @@ body {
     font-weight: 600;
 }
 
-/* Cards grid */
+/* ---- Grid de tarjetas (ahora todas full-width) ---- */
 .cards-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
+    /* una sola columna, cada tarjeta ocupa el ancho completo */
     gap: 20px;
 }
 
 .full-width {
-    grid-column: span 2;
+    /* ya no es necesario span, pero se mantiene por compatibilidad */
+    grid-column: span 1;
 }
 
 .card {
@@ -115,24 +131,157 @@ body {
     font-weight: 600;
 }
 
+.filtro-titulo {
+    display: block;
+    font-size: 0.9rem;
+    color: #657786;
+    font-weight: 400;
+    margin-top: 6px;
+}
+
 .chart-container {
     flex: 1;
     position: relative;
-    min-height: 250px;
+    min-height: var(--chart-height);
+    /* gráficos más altos */
 }
 
-/* Responsive */
+/* Total visible sobre la tarjeta */
+.total-card {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 8px;
+    background: var(--light-bg);
+    padding: 6px 10px;
+    border-radius: 5px;
+    display: inline-block;
+    align-self: flex-start;
+}
+
+.total-card strong {
+    color: var(--primary);
+    font-size: 1rem;
+    margin-left: 5px;
+}
+
+/* Detalles en lista para Ventas por Sucursal */
+.detalle-lista {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 12px;
+}
+
+.item-detalle {
+    background: var(--light-bg);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.item-detalle strong {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* ---- Filtros y botones ---- */
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 15px;
+    align-items: flex-end;
+    justify-content: space-between;
+}
+
+.filters label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.92rem;
+    min-width: 180px;
+    flex: 1 1 220px;
+}
+
+.filters label span {
+    margin-bottom: 6px;
+}
+
+.filters select,
+.filters input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d6db;
+    border-radius: 8px;
+    margin-top: 8px;
+    background: #fff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.filters select:focus,
+.filters input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.12);
+    outline: none;
+}
+
+.filters button,
+#btn-consultar {
+    padding: 12px 20px;
+    background-color: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    min-height: 44px;
+    align-self: flex-end;
+}
+
+.filters button:hover,
+#btn-consultar:hover {
+    background-color: #2b80b8;
+    transform: translateY(-1px);
+}
+
+/* Descripción de la consulta personalizada */
+.consulta-description {
+    padding: 18px 20px;
+    background: #f7fbff;
+    border: 1px solid #d7e6f3;
+    border-radius: 12px;
+    margin-bottom: 18px;
+}
+
+.consulta-description p {
+    margin: 0 0 10px;
+    line-height: 1.6;
+    color: #33475b;
+    font-size: 0.95rem;
+}
+
+.consulta-description strong {
+    color: #2c3e50;
+}
+
+#consulta-estado {
+    margin-top: 10px;
+    font-size: 0.93rem;
+    color: #1a5276;
+}
+
+/* ---- Responsive (móviles) ---- */
 @media (max-width: 900px) {
-    .cards-grid {
-        grid-template-columns: 1fr;
+    .filters {
+        justify-content: stretch;
     }
 
-    .full-width {
-        grid-column: span 1;
-    }
-
-    .sidebar {
-        width: 200px;
+    .filters label,
+    .filters button,
+    #btn-consultar {
+        flex: 1 1 100%;
+        min-width: 0;
     }
 }
 
@@ -148,7 +297,8 @@ body {
         padding: 10px;
     }
 
-    .logo {
+    .logo,
+    .sidebar .logo-imagen {
         display: none;
     }
 
@@ -156,48 +306,24 @@ body {
         padding: 8px 15px;
         white-space: nowrap;
     }
+
+    .chart-container {
+        min-height: 300px;
+    }
 }
 
-.filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 15px;
-    align-items: center;
-}
-
-.filters label {
-    display: flex;
-    flex-direction: column;
-    font-size: 0.9rem;
-}
-
-.filters select,
-.filters input {
-    padding: 6px 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    margin-top: 3px;
-}
-
-#btn-consultar {
-    padding: 8px 15px;
-    background-color: var(--accent);
-    color: #fff;
+.btn-imprimir {
+    padding: 8px 18px;
+    background-color: #8e44ad;
+    color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
+    font-weight: 600;
     cursor: pointer;
-    align-self: flex-end;
+    transition: background-color 0.2s ease;
+    margin-left: 15px;
 }
 
-.sidebar .logo-imagen {
-    text-align: center;
-    margin: 10px 0 20px 0;
-}
-
-.sidebar .logo-imagen img {
-    width: 160px;
-    height: auto;
-    display: block;
-    margin: 0 auto;
+.btn-imprimir:hover {
+    background-color: #732d91;
 }

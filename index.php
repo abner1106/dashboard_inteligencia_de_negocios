@@ -28,7 +28,7 @@
     </div>
 
     <script>
-        setTimeout(function() {
+        setTimeout(function () {
             window.location.href = 'php/dashboard.php';
         }, 20000);
     </script>
