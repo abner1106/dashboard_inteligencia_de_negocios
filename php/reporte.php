@@ -1,21 +1,21 @@
 <?php
 require_once 'conexion.php';
 
-// Recibe los mismos filtros globales
+// Recibe los filtros de mes/año y sucursal
 $filtroSucursal = $_GET['sucursal'] ?? '';
-$fechaIni = $_GET['fecha_ini'] ?? '';
-$fechaFin = $_GET['fecha_fin'] ?? '';
+$mesSeleccionado = (int) ($_GET['mes'] ?? date('m'));
+$anioSeleccionado = (int) ($_GET['anio'] ?? date('Y'));
 
 $where = [];
 $params = [];
 
-if ($fechaIni) {
-    $where[] = "v.fecha >= :fecha_ini";
-    $params['fecha_ini'] = $fechaIni . ' 00:00:00';
+if ($mesSeleccionado >= 1 && $mesSeleccionado <= 12) {
+    $where[] = "MONTH(v.fecha) = :mes";
+    $params['mes'] = $mesSeleccionado;
 }
-if ($fechaFin) {
-    $where[] = "v.fecha <= :fecha_fin";
-    $params['fecha_fin'] = $fechaFin . ' 23:59:59';
+if ($anioSeleccionado >= 2000) {
+    $where[] = "YEAR(v.fecha) = :anio";
+    $params['anio'] = $anioSeleccionado;
 }
 if ($filtroSucursal) {
     $where[] = "v.sucursal = :sucursal";
@@ -47,11 +47,11 @@ $ventas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $totalVentas = array_sum(array_column($ventas, 'total'));
 
 // Título dinámico
-$tituloReporte = 'Historial de Ventas';
-if ($fechaIni)
-    $tituloReporte .= " desde $fechaIni";
-if ($fechaFin)
-    $tituloReporte .= " hasta $fechaFin";
+$mesesTexto = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+$nombreMes = $mesesTexto[$mesSeleccionado - 1] ?? '';
+$tituloReporte = 'Reporte Ejecutivo de Ventas';
+if ($nombreMes && $anioSeleccionado)
+    $tituloReporte .= " - $nombreMes $anioSeleccionado";
 if ($filtroSucursal)
     $tituloReporte .= " - Sucursal: $filtroSucursal";
 ?>
@@ -66,7 +66,7 @@ if ($filtroSucursal)
         @media print {
             body {
                 background: white;
-                color: black;
+                color: #1f2937;
             }
 
             .no-print {
@@ -77,54 +77,98 @@ if ($filtroSucursal)
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
             padding: 20px;
-            background: #f4f4f4;
+            background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+            color: #1f2937;
         }
 
         .reporte-container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 0 auto;
             background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 28px;
+            border-radius: 16px;
+            box-shadow: 0 12px 35px rgba(15, 23, 42, 0.12);
         }
 
-        h1 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-
-        .resumen {
-            text-align: center;
-            font-size: 1.2em;
+        .reporte-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 20px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            color: white;
             margin-bottom: 20px;
-            background: #ecf0f1;
-            padding: 10px;
-            border-radius: 5px;
+        }
+
+        .reporte-header h1 {
+            margin: 0 0 6px;
+            font-size: 1.6rem;
+        }
+
+        .reporte-header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.18);
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .resumen-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .resumen-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-left: 5px solid #2563eb;
+            border-radius: 12px;
+            padding: 12px 14px;
+        }
+
+        .resumen-card strong {
+            display: block;
+            font-size: 1.15rem;
+            color: #0f172a;
+            margin-top: 4px;
+        }
+
+        .resumen-card span {
+            color: #64748b;
+            font-size: 0.86rem;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 10px;
+            font-size: 0.9rem;
         }
 
         th,
         td {
-            border: 1px solid #bdc3c7;
-            padding: 8px;
+            border: 1px solid #e5e7eb;
+            padding: 8px 10px;
             text-align: left;
-            font-size: 0.9em;
         }
 
         th {
-            background-color: #2c3e50;
+            background-color: #1d4ed8;
             color: white;
+            font-weight: 600;
         }
 
         tr:nth-child(even) {
-            background-color: #f8f9fa;
+            background-color: #f8fafc;
         }
 
         .acciones {
@@ -133,13 +177,23 @@ if ($filtroSucursal)
         }
 
         button {
-            padding: 10px 20px;
-            background: #3498db;
+            padding: 10px 18px;
+            background: #2563eb;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 999px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 28px 12px;
+            color: #64748b;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 12px;
+            margin-top: 16px;
         }
     </style>
 </head>
@@ -149,11 +203,26 @@ if ($filtroSucursal)
         <div class="acciones no-print">
             <button onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
         </div>
-        <h1><?= htmlspecialchars($tituloReporte) ?></h1>
-        <div class="resumen">
-            <strong>Total de ventas:</strong> $<?= number_format($totalVentas, 2) ?>
-            &nbsp;|&nbsp;
-            <strong>Registros encontrados:</strong> <?= count($ventas) ?>
+        <div class="reporte-header">
+            <div>
+                <h1><?= htmlspecialchars($tituloReporte) ?></h1>
+                <p>Resumen claro y ejecutivo para análisis de ventas del periodo seleccionado.</p>
+            </div>
+            <div class="badge">Periodo: <?= htmlspecialchars($nombreMes) ?> <?= $anioSeleccionado ?></div>
+        </div>
+        <div class="resumen-grid">
+            <div class="resumen-card">
+                <span>Total de ventas</span>
+                <strong>$<?= number_format($totalVentas, 2) ?></strong>
+            </div>
+            <div class="resumen-card">
+                <span>Ventas</span>
+                <strong><?= count($ventas) ?></strong>
+            </div>
+            <div class="resumen-card">
+                <span>Sucursal</span>
+                <strong><?= htmlspecialchars($filtroSucursal ?: 'Todas') ?></strong>
+            </div>
         </div>
 
         <?php if (!empty($ventas)): ?>
@@ -167,8 +236,6 @@ if ($filtroSucursal)
                         <th>Cliente</th>
                         <th>Producto</th>
                         <th>Cant.</th>
-                        <th>Precio</th>
-                        <th>Importe</th>
                         <th>Forma de pago</th>
                         <th>Total Venta</th>
                     </tr>
@@ -183,8 +250,6 @@ if ($filtroSucursal)
                             <td><?= htmlspecialchars($v['cliente']) ?></td>
                             <td><?= htmlspecialchars($v['producto']) ?></td>
                             <td><?= $v['cantidad'] ?></td>
-                            <td>$<?= number_format($v['precio'], 2) ?></td>
-                            <td>$<?= number_format($v['importe'], 2) ?></td>
                             <td><?= htmlspecialchars($v['forma_pago']) ?></td>
                             <td><strong>$<?= number_format($v['total'], 2) ?></strong></td>
                         </tr>
@@ -192,7 +257,7 @@ if ($filtroSucursal)
                 </tbody>
             </table>
         <?php else: ?>
-            <p style="text-align:center;">No se encontraron ventas con los filtros aplicados.</p>
+            <div class="empty-state">No se encontraron ventas con los filtros aplicados para este mes y año.</div>
         <?php endif; ?>
     </div>
 </body>

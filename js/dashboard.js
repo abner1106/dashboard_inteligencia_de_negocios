@@ -1,94 +1,233 @@
 // dashboard.js
 document.addEventListener('DOMContentLoaded', () => {
-    Chart.register(ChartDataLabels);
+    if (window.ChartDataLabels) {
+        Chart.register(ChartDataLabels);
+    }
 
-    const getData = id => {
+    const getData = (id) => {
         const el = document.getElementById(id);
         if (!el) return [];
-        try { return JSON.parse(el.textContent); }
-        catch (e) { console.error('Error parseando JSON de', id); return []; }
+        try {
+            return JSON.parse(el.textContent);
+        } catch (e) {
+            console.error('Error parseando JSON de', id);
+            return [];
+        }
     };
 
-    // Formateador de moneda
-    const currencyFormat = (value) => '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatCurrency = (value) =>
+        new Intl.NumberFormat('es-MX', {
+            style: 'currency',
+            currency: 'MXN',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(value);
 
-    // Opciones base para datalabels
-    const dataLabelOptions = {
-        color: '#1a3b5c',
-        font: { weight: 'bold', size: 16 },
-        anchor: 'center',
-        align: 'center'
+    const formatNumber = (value) =>
+        new Intl.NumberFormat('es-MX').format(value);
+
+    const shortName = (name, maxLen = 22) =>
+        name.length > maxLen ? name.substring(0, maxLen) + '…' : name;
+
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const formatMonth = (ym) => {
+        const [year, month] = ym.split('-');
+        return `${monthNames[parseInt(month, 10) - 1]} ${year.slice(2)}`;
     };
 
-    // ==================== PRODUCTOS ====================
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.borderColor = 'rgba(56, 189, 248, 0.08)';
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.95)';
+    Chart.defaults.plugins.tooltip.borderColor = 'rgba(6, 182, 212, 0.3)';
+    Chart.defaults.plugins.tooltip.borderWidth = 1;
+    Chart.defaults.plugins.tooltip.cornerRadius = 10;
+    Chart.defaults.plugins.tooltip.padding = 12;
+
+    const palette = {
+        cyan: '#06b6d4',
+        cyanLight: '#22d3ee',
+        green: '#10b981',
+        greenLight: '#34d399',
+        purple: '#8b5cf6',
+        amber: '#f59e0b',
+        rose: '#f43f5e',
+        blue: '#3b82f6'
+    };
+
+    const chartColors = ['#06b6d4', '#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
+
     const productos = getData('data-productos');
-    if (productos.length) {
-        new Chart(document.getElementById('chartProductos'), {
+    const empleados = getData('data-empleados');
+    const sucursales = getData('data-sucursales');
+    const categorias = getData('data-categorias');
+    const clientes = getData('data-clientes');
+    const sucSeleccionada = getData('data-sucursal-seleccionada') || '';
+
+    const createProductosChart = (data) => {
+        const ctx = document.getElementById('chartProductos').getContext('2d');
+        new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: productos.map(p => p.descripcion),
+                labels: data.map((d) => shortName(d.descripcion, 24)),
                 datasets: [{
                     label: 'Unidades vendidas',
-                    data: productos.map(p => p.total),
-                    backgroundColor: '#3498db',
-                    borderRadius: 6
+                    data: data.map((d) => Number(d.total)),
+                    backgroundColor: chartColors.map((c) => c + '88'),
+                    borderColor: chartColors,
+                    borderWidth: 1.5,
+                    borderRadius: 6,
+                    borderSkipped: false
                 }]
             },
             options: {
-                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
+                indexAxis: 'y',
                 plugins: {
                     legend: { display: false },
-                    datalabels: { ...dataLabelOptions, formatter: v => v.toLocaleString() }
+                    tooltip: {
+                        callbacks: {
+                            title: (items) => data[items[0].dataIndex].descripcion,
+                            label: (context) => `Unidades vendidas: ${formatNumber(context.raw)}`
+                        }
+                    },
+                    datalabels: {
+                        color: '#ffffff',
+                        font: { weight: '700', size: 15 },
+                        anchor: 'center',
+                        align: 'center',
+                        formatter: (value) => formatNumber(value)
+                    }
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(56, 189, 248, 0.05)' }, ticks: { precision: 0 } },
+                    y: { grid: { display: false } }
                 }
             }
         });
-    }
+    };
 
-    // ==================== EMPLEADOS ====================
-    const empleados = getData('data-empleados');
-    if (empleados.length) {
-        new Chart(document.getElementById('chartEmpleados'), {
+    const createCategoriasChart = (data) => {
+        const ctx = document.getElementById('chartCategorias').getContext('2d');
+
+        // Reordenar: Accesorio al final
+        const reorderedData = data.filter((d) => !(d.categoria || d.nombre || '').toLowerCase().includes('accesorio'))
+            .concat(data.filter((d) => (d.categoria || d.nombre || '').toLowerCase().includes('accesorio')));
+
+        const total = reorderedData.reduce((sum, item) => sum + Number(item.ingreso || 0), 0);
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: reorderedData.map((d) => d.categoria || d.nombre),
+                datasets: [{
+                    data: reorderedData.map((d) => Number(d.ingreso || d.total || 0)),
+                    backgroundColor: ['#06b6d4', '#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'],
+                    borderColor: '#0a0e1a',
+                    borderWidth: 3,
+                    hoverOffset: 8,
+                    spacing: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '62%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { usePointStyle: true, pointStyle: 'rectRounded', padding: 16, font: { size: 12 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.label}: ${formatCurrency(ctx.raw)} (${((ctx.raw / total) * 100).toFixed(1)}%)`
+                        }
+                    },
+                    datalabels: {
+                        color: '#ffffff',
+                        font: { weight: '700', size: 12 },
+                        formatter: (value) => formatCurrency(value),
+                        clip: false,
+                        display: (context) => context.dataset.data[context.dataIndex] > 0,
+                        anchor: 'center',
+                        align: 'center',
+                        offset: 10
+                    }
+                }
+            }
+        });
+    };
+
+    const createEmpleadosChart = (data) => {
+        const ctx = document.getElementById('chartEmpleados').getContext('2d');
+        new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: empleados.map(e => e.nombre),
+                labels: data.map((d) => shortName(d.nombre, 18)),
                 datasets: [{
                     label: 'Ventas ($)',
-                    data: empleados.map(e => e.total),
-                    backgroundColor: '#27ae60',
-                    borderRadius: 6
+                    data: data.map((d) => Number(d.total)),
+                    backgroundColor: 'rgba(139, 92, 246, 0.55)',
+                    borderColor: '#8b5cf6',
+                    borderWidth: 1.5,
+                    borderRadius: 6,
+                    borderSkipped: false
                 }]
             },
             options: {
-                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
-                    datalabels: { ...dataLabelOptions, formatter: currencyFormat }
+                    tooltip: {
+                        callbacks: {
+                            title: (items) => data[items[0].dataIndex].nombre,
+                            label: (ctx) => `Ventas: ${formatCurrency(ctx.raw)}`
+                        }
+                    },
+                    datalabels: {
+                        color: '#ffffff',
+                        font: { weight: '700', size: 14 },
+                        formatter: (value) => formatCurrency(value)
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { grid: { color: 'rgba(56, 189, 248, 0.05)' }, ticks: { callback: (v) => formatCurrency(v) } }
                 }
             }
         });
-    }
+    };
 
-    // ==================== SUCURSALES ====================
-    const sucursales = getData('data-sucursales');
-    const sucSeleccionada = getData('data-sucursal-seleccionada') || '';
-    if (sucursales.length) {
-        const labels = sucursales.map(s => s.nombre);
-        const data = sucursales.map(s => s.total);
-        const backgroundColors = labels.map(n => n === sucSeleccionada ? '#e74c3c' : '#bdc3c7');
+    const createSucursalesChart = (data) => {
+        const ctx = document.getElementById('chartSucursales').getContext('2d');
+        const labels = data.map((d) => d.nombre.replace('Sucursal ', ''));
+        const bgColors = labels.map((label) => {
+            if (sucSeleccionada && label === sucSeleccionada.replace('Sucursal ', '')) {
+                const grad = ctx.createLinearGradient(0, 0, 0, 320);
+                grad.addColorStop(0, '#f43f5e');
+                grad.addColorStop(1, '#fb7185');
+                return grad;
+            }
+            const grad = ctx.createLinearGradient(0, 0, 0, 320);
+            grad.addColorStop(0, '#06b6d4');
+            grad.addColorStop(1, '#0891b2');
+            return grad;
+        });
 
-        new Chart(document.getElementById('chartSucursales'), {
+        new Chart(ctx, {
             type: 'bar',
             data: {
                 labels,
                 datasets: [{
                     label: 'Ventas ($)',
-                    data,
-                    backgroundColor: backgroundColors,
-                    borderRadius: 6
+                    data: data.map((d) => Number(d.total)),
+                    backgroundColor: bgColors,
+                    borderColor: '#06b6d4',
+                    borderWidth: 1.5,
+                    borderRadius: 8,
+                    borderSkipped: false
                 }]
             },
             options: {
@@ -96,191 +235,148 @@ document.addEventListener('DOMContentLoaded', () => {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
-                    datalabels: { ...dataLabelOptions, formatter: currencyFormat }
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `Ventas: ${formatCurrency(ctx.raw)}`
+                        }
+                    },
+                    datalabels: {
+                        color: '#ffffff',
+                        font: { weight: '700', size: 14 },
+                        formatter: (value) => formatCurrency(value)
+                    }
                 },
-                scales: { y: { beginAtZero: true } }
-            }
-        });
-    }
-
-    // ==================== CATEGORÍAS ====================
-    const categorias = getData('data-categorias');
-    if (categorias.length) {
-        new Chart(document.getElementById('chartCategorias'), {
-            type: 'bar',
-            data: {
-                labels: categorias.map(c => c.categoria),
-                datasets: [{
-                    label: 'Ingresos ($)',
-                    data: categorias.map(c => c.ingreso),
-                    backgroundColor: ['#9b59b6', '#3498db', '#e74c3c', '#2ecc71'],
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    datalabels: { ...dataLabelOptions, formatter: currencyFormat }
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { grid: { color: 'rgba(56, 189, 248, 0.05)' }, ticks: { callback: (v) => formatCurrency(v) } }
                 }
             }
         });
-    }
-
-    // ==================== EVOLUCIÓN MENSUAL (VERSIÓN LIMPIA) ====================
-    let chartMesesVentas = null;
-    const evolAnio = document.getElementById('evol-anio');
-    const evolProducto = document.getElementById('evol-producto');
-    const evolTotalDiv = document.getElementById('evol-total').querySelector('strong');
-
-    const cargarEvolucion = () => {
-        const params = new URLSearchParams();
-        const anio = evolAnio.value;
-        const producto = evolProducto.value;
-        if (anio) params.append('anio', anio);
-        if (producto) params.append('producto', producto);
-
-        // filtros globales actuales
-        const urlParams = new URLSearchParams(window.location.search);
-        const fechaIni = urlParams.get('fecha_ini') || '';
-        const fechaFin = urlParams.get('fecha_fin') || '';
-        const sucursal = urlParams.get('sucursal') || '';
-        if (fechaIni) params.append('fecha_ini', fechaIni);
-        if (fechaFin) params.append('fecha_fin', fechaFin);
-        if (sucursal) params.append('sucursal', sucursal);
-
-        fetch(`endpoints/ajax_evolucion.php?${params.toString()}`)
-            .then(res => res.json())
-            .then(data => {
-                // Actualizar el total
-                const total = data.reduce((sum, d) => sum + parseFloat(d.total), 0);
-                evolTotalDiv.textContent = currencyFormat(total);
-
-                const labels = data.map(d => d.mes);
-                const valores = data.map(d => parseFloat(d.total));
-
-                const ctx = document.getElementById('chartMesesVentas').getContext('2d');
-                if (chartMesesVentas) chartMesesVentas.destroy();
-
-                chartMesesVentas = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Ventas ($)',
-                            data: valores,
-                            borderColor: '#2c3e50',
-                            backgroundColor: 'rgba(44, 62, 80, 0.05)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.3,
-                            pointBackgroundColor: '#2c3e50',
-                            pointRadius: 4,
-                            pointHoverRadius: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: (ctx) => currencyFormat(ctx.raw)
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: (value) => currencyFormat(value)
-                                }
-                            }
-                        }
-                    }
-                });
-            })
-            .catch(err => console.error(err));
     };
 
-    evolAnio.addEventListener('change', cargarEvolucion);
-    evolProducto.addEventListener('change', cargarEvolucion);
-    cargarEvolucion();
-
-    // ==================== CLIENTES ====================
-    const clientes = getData('data-clientes');
-    if (clientes.length) {
-        new Chart(document.getElementById('chartClientes'), {
+    const createClientesChart = (data) => {
+        const ctx = document.getElementById('chartClientes').getContext('2d');
+        new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: clientes.map(c => c.nombre),
+                labels: data.map((d) => shortName(d.nombre, 20)),
                 datasets: [{
-                    label: 'Total gastado ($)',
-                    data: clientes.map(c => c.total),
-                    backgroundColor: '#f39c12',
-                    borderRadius: 6
+                    label: 'Total gastado',
+                    data: data.map((d) => Number(d.total)),
+                    backgroundColor: 'rgba(6, 182, 212, 0.5)',
+                    borderColor: '#06b6d4',
+                    borderWidth: 1.5,
+                    borderRadius: 6,
+                    borderSkipped: false
                 }]
             },
             options: {
-                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: (items) => data[items[0].dataIndex].nombre,
+                            label: (ctx) => `Total gastado: ${formatCurrency(ctx.raw)}`
+                        }
+                    },
                     datalabels: {
-                        anchor: 'end',
-                        align: 'end',
-                        color: '#1a3b5c',
-                        font: { weight: 'bold', size: 14 },
-                        formatter: currencyFormat
+                        color: '#ffffff',
+                        font: { weight: '700', size: 14 },
+                        formatter: (value) => formatCurrency(value)
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { maxRotation: 45 } },
+                    y: { grid: { color: 'rgba(56, 189, 248, 0.05)' }, ticks: { callback: (v) => formatCurrency(v) } }
+                }
+            }
+        });
+    };
+
+    const createTendenciaChart = (data, granularidad = 'meses') => {
+        const canvas = document.getElementById('chartMesesVentas') || document.getElementById('chartTendencia');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 320);
+        gradient.addColorStop(0, 'rgba(6, 182, 212, 0.25)');
+        gradient.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
+
+        const labels = data.map((d) => {
+            if (granularidad === 'dias') {
+                return d.etiqueta || d.periodo?.split('-')[2] || d.periodo;
+            }
+            return formatMonth(d.etiqueta || d.periodo);
+        });
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: granularidad === 'dias' ? 'Ventas del día ($)' : 'Ventas del mes ($)',
+                    data: data.map((d) => Number(d.total)),
+                    borderColor: palette.cyan,
+                    backgroundColor: gradient,
+                    borderWidth: 2.5,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: palette.cyanLight,
+                    pointBorderColor: '#0a0e1a',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `Ventas: ${formatCurrency(ctx.raw)}`
+                        }
+                    },
+                    datalabels: {
+                        color: '#ffffff',
+                        font: { weight: '700', size: 13 },
+                        formatter: (value) => formatCurrency(value),
+                        clip: false,
+                        display: (context) => context.dataset.data[context.dataIndex] > 0
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(56, 189, 248, 0.05)' },
+                        ticks: { callback: (v) => formatCurrency(v) }
                     }
                 }
             }
         });
-    }
+    };
 
-    // ==================== CONSULTA PERSONALIZADA ====================
-    let chartPersonalizado;
-    const consultaEstado = document.getElementById('consulta-estado');
-    document.getElementById('btn-consultar').addEventListener('click', () => {
-        const dimension = document.getElementById('dimension').value;
-        const metrica = document.getElementById('metrica').value;
-        const ini = document.getElementById('fecha-ini').value;
-        const fin = document.getElementById('fecha-fin').value;
+    if (productos.length) createProductosChart(productos);
+    if (categorias.length) createCategoriasChart(categorias);
+    if (empleados.length) createEmpleadosChart(empleados);
+    if (sucursales.length) createSucursalesChart(sucursales);
+    if (clientes.length) createClientesChart(clientes);
 
-        consultaEstado.textContent = 'Consultando...';
-        const params = new URLSearchParams({ dimension, metrica });
-        if (ini) params.append('fecha_ini', ini);
-        if (fin) params.append('fecha_fin', fin);
-
-        fetch(`endpoints/ajax_consulta.php?${params.toString()}`)
-            .then(res => res.json())
-            .then(data => {
-                const ctx = document.getElementById('chartPersonalizado').getContext('2d');
-                if (chartPersonalizado) chartPersonalizado.destroy();
-                chartPersonalizado = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: data.map(d => d.etiqueta),
-                        datasets: [{
-                            label: metrica === 'cantidad' ? 'Unidades' : 'Monto ($)',
-                            data: data.map(d => parseFloat(d.valor)),
-                            backgroundColor: '#16a085',
-                            borderRadius: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-                consultaEstado.textContent = 'Gráfico actualizado.';
+    const tendenciaCanvas = document.getElementById('chartMesesVentas') || document.getElementById('chartTendencia');
+    if (tendenciaCanvas) {
+        const params = new URLSearchParams(window.location.search);
+        fetch(`endpoints/ajax_evolucion.php?${params.toString()}`)
+            .then((res) => res.json())
+            .then((payload) => {
+                const rows = payload.data || [];
+                const granularidad = payload.granularidad || 'meses';
+                if (rows.length) {
+                    createTendenciaChart(rows, granularidad);
+                }
             })
-            .catch(err => {
-                console.error(err);
-                consultaEstado.textContent = 'Error al consultar.';
-            });
-    });
+            .catch((err) => console.error(err));
+    }
 });

@@ -1,8 +1,8 @@
 <?php
 require_once '../conexion.php';
 
-$mes    = $_GET['mes'] ?? null;
-$anio   = $_GET['anio'] ?? null;
+$mes = $_GET['mes'] ?? null;
+$anio = $_GET['anio'] ?? null;
 $producto = $_GET['producto'] ?? null;
 $fechaIni = $_GET['fecha_ini'] ?? null;
 $fechaFin = $_GET['fecha_fin'] ?? null;
@@ -36,20 +36,39 @@ if ($sucursal) {
     $params['sucursal'] = $sucursal;
 }
 
-$sql = "SELECT DATE_FORMAT(v.fecha, '%Y-%m') AS mes, SUM(v.total) AS total
-        FROM venta v
-        JOIN detalle_venta dv ON v.folio = dv.folio_venta
-        WHERE 1=1";
+$granularidad = $mes ? 'dias' : 'meses';
+
+if ($granularidad === 'dias') {
+    $sql = "SELECT DATE_FORMAT(v.fecha, '%Y-%m-%d') AS periodo,
+                   DATE_FORMAT(v.fecha, '%d') AS etiqueta,
+                   SUM(v.total) AS total
+            FROM venta v
+            WHERE 1=1";
+} else {
+    $sql = "SELECT DATE_FORMAT(v.fecha, '%Y-%m') AS periodo,
+                   DATE_FORMAT(v.fecha, '%Y-%m') AS etiqueta,
+                   SUM(v.total) AS total
+            FROM venta v
+            WHERE 1=1";
+}
 
 if (!empty($where)) {
     $sql .= " AND " . implode(" AND ", $where);
 }
-$sql .= " GROUP BY mes ORDER BY mes ASC";
+
+if ($granularidad === 'dias') {
+    $sql .= " GROUP BY DATE(v.fecha) ORDER BY DATE(v.fecha) ASC";
+} else {
+    $sql .= " GROUP BY DATE_FORMAT(v.fecha, '%Y-%m') ORDER BY DATE_FORMAT(v.fecha, '%Y-%m') ASC";
+}
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 header('Content-Type: application/json');
-echo json_encode($data);
+echo json_encode([
+    'granularidad' => $granularidad,
+    'data' => $data
+]);
 
